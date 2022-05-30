@@ -45,6 +45,7 @@ ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim16;
 
 UART_HandleTypeDef huart2;
 
@@ -53,15 +54,25 @@ UART_HandleTypeDef huart2;
 uint8_t TxStartMessage[] = "\r\n***** Example 2 - 5XWF0 *****\r\n";
 
 // ADC
-uint32_t ADC_Buff[1];
+uint32_t ADC_Buff[3];
 uint32_t adc_val_1;
+uint32_t adc_val_2;
+uint32_t adc_val_3;
 float meas_volt_1 = 0.0f;
+float meas_volt_2 = 0.0f;
+float meas_volt_3 = 0.0f;
 
-// PWM
-uint32_t PWM_Freq = 50000;
-float PWM_DutyC = 50;
-int32_t PWM_Period;
-int32_t PWM_PulseWidth;
+// PWM DC
+uint32_t PWM_Freq_DC = 60000;
+float PWM_DutyC_DC = 50;
+int32_t PWM_Period_DC;
+int32_t PWM_PulseWidth_DC;
+
+// PWM AC
+uint32_t PWM_Freq_AC = 60000;
+float PWM_DutyC_AC = 50;
+int32_t PWM_Period_AC;
+int32_t PWM_PulseWidth_AC;
 
 /* USER CODE END PV */
 
@@ -72,6 +83,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -125,33 +137,52 @@ int main(void)
   MX_DMA_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
+  MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
+
   printf("%s",TxStartMessage);
 
-  PWM_Period = 64000000/(2*PWM_Freq)-1;
-  PWM_PulseWidth = (int)((PWM_Period*PWM_DutyC)/100);
+  //DC-AC PWM
+  PWM_Period_AC = 64000000/(2*PWM_Freq_AC)-1;
+  PWM_PulseWidth_AC = (int)((PWM_Period_AC*PWM_DutyC_AC)/100);
 
-  __HAL_TIM_SET_AUTORELOAD(&htim1, PWM_Period);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth);
+  __HAL_TIM_SET_AUTORELOAD(&htim16, PWM_Period_AC);
+  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
+  HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+
+  //DC-DC PWM
+  PWM_Period_DC = 64000000/(2*PWM_Freq_DC)-1;
+  PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
+
+  __HAL_TIM_SET_AUTORELOAD(&htim1, PWM_Period_DC);
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_Buff, 1);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_Buff, 3);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  PWM_DutyC = meas_volt_1;	// Conversion range 0-3.3V to 0-100%
-	  PWM_PulseWidth = (int)((PWM_Period*PWM_DutyC)/100);
-	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth);
-	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC);
+	  PWM_DutyC_AC = 50;	// Conversion range 0-3.3V to 0-100%
+	  PWM_PulseWidth_AC = (int)((PWM_Period_AC*PWM_DutyC_AC)/100);
+	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
+//	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
+	  printf("Test\r\n");
+	  PWM_DutyC_DC = 50;	// Conversion range 0-3.3V to 0-100%
+	  PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
+	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
+//	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
 	  HAL_Delay(1000);
+
+  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+
   /* USER CODE END 3 */
 }
 
@@ -359,6 +390,69 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+  * @brief TIM16 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM16_Init(void)
+{
+
+  /* USER CODE BEGIN TIM16_Init 0 */
+
+  /* USER CODE END TIM16_Init 0 */
+
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM16_Init 1 */
+
+  /* USER CODE END TIM16_Init 1 */
+  htim16.Instance = TIM16;
+  htim16.Init.Prescaler = 0;
+  htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim16.Init.Period = 65535;
+  htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim16.Init.RepetitionCounter = 1;
+  htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim16) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim16, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.BreakFilter = 0;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim16, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM16_Init 2 */
+
+  /* USER CODE END TIM16_Init 2 */
+  HAL_TIM_MspPostInit(&htim16);
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -425,13 +519,20 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	// Prevent unused argument(s) compilation warning
 	UNUSED(hadc);
 
-		adc_val_1 = ADC_Buff[0];
+		adc_val_1 = ADC_Buff[0];	//DC-DC Current sensor output value
+		adc_val_2 = ADC_Buff[1];	//DC-DC Voltage output value
+		adc_val_3 = ADC_Buff[2];	//DC-DC Voltage input value
+
 		meas_volt_1 = (((float)adc_val_1)/4095.0f)*3.3f;
+		meas_volt_2 = (((float)adc_val_2)/4095.0f)*3.3f;
+		meas_volt_3 = (((float)adc_val_3)/4095.0f)*3.3f;
 }
 
 /* USER CODE END 4 */

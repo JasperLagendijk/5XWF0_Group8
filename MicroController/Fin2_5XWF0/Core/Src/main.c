@@ -74,6 +74,8 @@ float PWM_DutyC_AC = 50;
 int32_t PWM_Period_AC;
 int32_t PWM_PulseWidth_AC;
 
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -150,6 +152,11 @@ int main(void)
   __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
   HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
 
+  //DC-ACN
+//  __HAL_TIM_SET_AUTORELOAD(&htim16, PWM_Period_AC);
+//    __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1N, PWM_PulseWidth_AC);
+//    HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1N);
+
   //DC-DC PWM
   PWM_Period_DC = 64000000/(2*PWM_Freq_DC)-1;
   PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
@@ -161,15 +168,14 @@ int main(void)
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_Buff, 3);
 
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  PWM_DutyC_AC = 50;	// Starting value duty cycle in %
-  PWM_DutyC_DC = 50;	// Starting value duty cycle in %
+  //MPPT
   float I_in = meas_volt_1;		// have to convert to Amps (look it up)
   float V_in = meas_volt_3;	// Starting value input voltage in V
   float P_in = I_in*V_in;
 
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
@@ -178,6 +184,8 @@ int main(void)
 	  // Creating PWM for DC-AC
 	  PWM_PulseWidth_AC = (int)((PWM_Period_AC*PWM_DutyC_AC)/100);
 	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
+
+//	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1N, PWM_PulseWidth_AC);
 //	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
 
 	  // Creating PWM for DC-DC
@@ -272,7 +280,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_TRGO;
@@ -430,7 +438,7 @@ static void MX_TIM16_Init(void)
   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim16.Init.Period = 65535;
   htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim16.Init.RepetitionCounter = 1;
+  htim16.Init.RepetitionCounter = 0;
   htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
   {
@@ -532,28 +540,13 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
 }
 
 /* USER CODE BEGIN 4 */
 
 
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-	// Prevent unused argument(s) compilation warning
-	UNUSED(hadc);
-
-		adc_val_1 = ADC_Buff[0];	//DC-DC Current sensor output value
-		adc_val_2 = ADC_Buff[1];	//DC-DC Voltage output value
-		adc_val_3 = ADC_Buff[2];	//DC-DC Voltage input value
-
-		meas_volt_1 = (((float)adc_val_1)/4095.0f)*3.3f;
-		meas_volt_2 = (((float)adc_val_2)/4095.0f)*3.3f;
-		meas_volt_3 = (((float)adc_val_3)/4095.0f)*3.3f;
-}
-
-/* USER CODE END 4 */
 float MMPT(float * I, float * V, float * P, float D)
 {
 	const float DELTA_D = 0.01;
@@ -582,6 +575,22 @@ float MMPT(float * I, float * V, float * P, float D)
 	printf("New D: %.2f\r\n", D);
 	return D;
 }
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	// Prevent unused argument(s) compilation warning
+	UNUSED(hadc);
+
+		adc_val_1 = ADC_Buff[0];	//DC-DC Current sensor output value
+		adc_val_2 = ADC_Buff[1];	//DC-DC Voltage output value
+		adc_val_3 = ADC_Buff[2];	//DC-DC Voltage input value
+
+		meas_volt_1 = (((float)adc_val_1)/4095.0f)*3.3f;
+		meas_volt_2 = (((float)adc_val_2)/4095.0f)*3.3f;
+		meas_volt_3 = (((float)adc_val_3)/4095.0f)*3.3f;
+}
+
+/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
@@ -614,3 +623,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+

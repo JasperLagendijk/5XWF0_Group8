@@ -145,17 +145,19 @@ int main(void)
   printf("%s",TxStartMessage);
 
   //DC-AC PWM
-  PWM_Period_AC = 64000000/(2*PWM_Freq_AC)-1;
+  PWM_Period_AC = 64000000/(PWM_Freq_AC)-1;
   PWM_PulseWidth_AC = (int)((PWM_Period_AC*PWM_DutyC_AC)/100);
 
   __HAL_TIM_SET_AUTORELOAD(&htim16, PWM_Period_AC);
   __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
   HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
 
+  HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1);			//TIM16 CH1N
+
   //DC-ACN
 //  __HAL_TIM_SET_AUTORELOAD(&htim16, PWM_Period_AC);
-//    __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1N, PWM_PulseWidth_AC);
-//    HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1N);
+//  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1N, PWM_PulseWidth_AC);
+//  HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1N);
 
   //DC-DC PWM
   PWM_Period_DC = 64000000/(2*PWM_Freq_DC)-1;
@@ -164,6 +166,7 @@ int main(void)
   __HAL_TIM_SET_AUTORELOAD(&htim1, PWM_Period_DC);
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+
 
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_Buff, 3);
@@ -179,9 +182,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  PWM_DutyC_DC = MMPT(&I_in, &V_in, &P_in, PWM_DutyC_DC);	// MPPT
+
 	  printf("The new D again: %.2f\r\n", PWM_DutyC_DC);
 	  // Creating PWM for DC-AC
+
 	  PWM_PulseWidth_AC = (int)((PWM_Period_AC*PWM_DutyC_AC)/100);
 	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
 
@@ -189,8 +193,14 @@ int main(void)
 //	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
 
 	  // Creating PWM for DC-DC
+//	  PWM_DutyC_DC = MMPT(&I_in, &V_in, &P_in, PWM_DutyC_DC);	// MPPT
 	  PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
 	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
+
+	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, !PWM_PulseWidth_DC);
+
+
+
 //	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
 
 	  printf("Test\r\n");
@@ -462,7 +472,7 @@ static void MX_TIM16_Init(void)
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.DeadTime = 122;
   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
   sBreakDeadTimeConfig.BreakFilter = 0;

@@ -134,9 +134,9 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_DMA_Init();
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM16_Init();
@@ -151,9 +151,9 @@ int main(void)
   __HAL_TIM_SET_AUTORELOAD(&htim16, PWM_Period_AC);
   __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
   HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
-  printf("jojojoo\r\n");
+
   HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1);			//TIM16 CH1N
-  printf("jojo\r\n");
+
   //DC-DC PWM
   PWM_Period_DC = 64000000/(2*PWM_Freq_DC)-1;
   PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
@@ -161,17 +161,18 @@ int main(void)
   __HAL_TIM_SET_AUTORELOAD(&htim1, PWM_Period_DC);
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  printf("PWM ok\r\n");
+
   //ADC Init
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-  printf("calibration ok\r\n");
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_Buff, 3);
-  printf("buff\r\n");
   //MPPT
-//  float I_in = meas_volt_1;		// have to convert to Amps (look it up)
-//  float V_in = meas_volt_3;	// Starting value input voltage in V
-//  float P_in = I_in*V_in;
-  printf("floats ok\r\n");
+
+  PWM_DutyC_AC = 50;
+  PWM_DutyC_DC = 50;
+  float I_in = meas_volt_1;		// have to convert to Amps (look it up)
+  float V_in = meas_volt_3;	// Starting value input voltage in V
+  float P_in = I_in*V_in;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -181,8 +182,8 @@ int main(void)
 
 	  printf("The new D again: %.2f\r\n", PWM_DutyC_DC);
 	  // ADC Measurements
-	  PWM_DutyC_DC = meas_volt_1*111.1f;
-	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
+//	  PWM_DutyC_DC = meas_volt_1*111.1f;
+//	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
 
 
 	  // Creating PWM for DC-AC
@@ -190,7 +191,7 @@ int main(void)
 	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
 
 	  // Creating PWM for DC-DC
-//	  PWM_DutyC_DC = MPPT(&I_in, &V_in, &P_in, PWM_DutyC_DC);	// MPPT
+	  PWM_DutyC_DC = MPPT(&I_in, &V_in, &P_in, PWM_DutyC_DC);	// MPPT
 	  PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
 	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
 
@@ -199,8 +200,9 @@ int main(void)
 	  printf("Duty Cycle AC: %.2f\r\n", PWM_DutyC_AC);
 	  printf("ADC1/1: %.2f V\r\n", meas_volt_1);
 	  printf("ADC1/2: %.2f V\r\n", meas_volt_2);
+	  printf("ADC1/4: %.2f V\r\n", meas_volt_3);
 
-	  HAL_Delay(1000);
+	  HAL_Delay(100);
 
   }
     /* USER CODE END WHILE */
@@ -278,7 +280,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_TRGO;

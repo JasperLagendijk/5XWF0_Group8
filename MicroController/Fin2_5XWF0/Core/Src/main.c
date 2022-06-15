@@ -182,6 +182,7 @@ int main(void)
 
 	  printf("The new D again: %.2f\r\n", PWM_DutyC_DC);
 	  // ADC Measurements
+	  PWM_DutyC_DC = (1 - (meas_volt_3 / 60)) * 100;
 //	  PWM_DutyC_DC = meas_volt_1*111.1f;
 //	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
 
@@ -191,7 +192,7 @@ int main(void)
 	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
 
 	  // Creating PWM for DC-DC
-	  PWM_DutyC_DC = MPPT(&I_in, &V_in, &P_in, PWM_DutyC_DC);	// MPPT
+//	  PWM_DutyC_DC = MPPT(&I_in, &V_in, &P_in, PWM_DutyC_DC);	// MPPT
 	  PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
 	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
 

@@ -58,9 +58,9 @@ uint32_t ADC_Buff[3];
 uint32_t adc_val_1;
 uint32_t adc_val_2;
 uint32_t adc_val_3;
-float meas_volt_1 = 0.0f;
-float meas_volt_2 = 0.0f;
-float meas_volt_3 = 0.0f;
+float I_DCDC = 0.0f;
+float Vout_DCDC = 0.0f;
+float Vin_DCDC = 0.0f;
 
 float n_eff = 1; 		//Efficiency
 
@@ -169,9 +169,7 @@ int main(void)
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADC_Buff, 3);
   //MPPT
 
-  float I_in = meas_volt_1;		// have to convert to Amps (look it up)
-  float V_in = meas_volt_3;	// Starting value input voltage in V
-  float P_in = I_in*V_in;
+  float P_in = I_DCDC*Vin_DCDC;
 
   /* USER CODE END 2 */
 
@@ -183,7 +181,7 @@ int main(void)
 //
 //  for (int i = 0; i < 10; i++)
 //  {
-//	  Duty_avg[i] = (1 - n_eff * ((meas_volt_3 * 18.18f) / 60)) * 100;
+//	  Duty_avg[i] = (1 - n_eff * ((Vin_DCDC) / 60)) * 100;
 //  }
 //
 //  PWM_DutyC_DC = Duty_avg/10;
@@ -195,8 +193,7 @@ int main(void)
 	  printf("The new D again: %.2f\r\n", PWM_DutyC_DC);
 	  // ADC Measurements
 
-//	  PWM_DutyC_DC = meas_volt_1*11.1f;
-//	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", meas_volt_1, (int)PWM_DutyC_DC);
+//	  printf("ADC Voltage: %.2f V - Duty Cycle %d\r\n", I_DCDC, (int)PWM_DutyC_DC);
 
 
 	  // Creating PWM for DC-AC
@@ -204,16 +201,16 @@ int main(void)
 	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
 
 	  // Creating PWM for DC-DC
-//	  PWM_DutyC_DC = MPPT(&I_in, &V_in, &P_in, PWM_DutyC_DC);	// MPPT
+//	  PWM_DutyC_DC = MPPT(&I_DCDC, &Vin_DCDC, &P_in, PWM_DutyC_DC);	// MPPT
 	  PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
 	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
 
 	  printf("Test\r\n");
 	  printf("Duty Cycle DC: %.2f\r\n", PWM_DutyC_DC);
 	  printf("Duty Cycle AC: %.2f\r\n", PWM_DutyC_AC);
-	  printf("ADC1/1: %.2f V\r\n", meas_volt_1);
-	  printf("ADC1/2: %.2f V\r\n", meas_volt_2);
-	  printf("ADC1/4: %.2f V\r\n", meas_volt_3);
+	  printf("ADC1/1: %.2f V\r\n", I_DCDC);
+	  printf("ADC1/2: %.2f V\r\n", Vout_DCDC);
+	  printf("ADC1/4: %.2f V\r\n", Vin_DCDC);
 
 	  HAL_Delay(100);
 
@@ -564,8 +561,8 @@ float MPPT(float * I, float * V, float * P, float D)
 {
 	const float DELTA_D = 0.01;
 	// 1. Find new V and I
-	float V_new = meas_volt_3;
-	float I_new = meas_volt_1;
+	float V_new = Vin_DCDC;
+	float I_new = I_DCDC;
 	// 2. Calculate new P
 	float P_new = V_new * I_new;
 	// 2. Compare new P versus old P
@@ -582,11 +579,11 @@ float MPPT(float * I, float * V, float * P, float D)
 	}
 
 //	Boundary check for generating 60V
-	if (meas_volt_2 * 21.5f > 60)
+	if (Vout_DCDC > 60)
 	{
 		D = D - DELTA_D;
 	}
-	else if (meas_volt_2 * 21.5f < 60)
+	else if (Vout_DCDC < 60)
 	{
 		D = D + DELTA_D;
 	}
@@ -612,9 +609,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 		adc_val_2 = ADC_Buff[1];	//DC-DC Voltage output value
 		adc_val_3 = ADC_Buff[2];	//DC-DC Voltage input value
 
-		meas_volt_1 = (((float)adc_val_1)/4095.0f)*3.3f;
-		meas_volt_2 = (((float)adc_val_2)/4095.0f)*3.3f ;
-		meas_volt_3 = (((float)adc_val_3)/4095.0f)*3.3f;
+		I_DCDC = ((((float)adc_val_1)/4095.0f)*3.3f- 1.69f)/0.04f;
+		Vout_DCDC = (((float)adc_val_2)/4095.0f)*71.0f ;
+		Vin_DCDC = (((float)adc_val_3)/4095.0f)*60.4f;
 }
 
 /* USER CODE END 4 */

@@ -150,19 +150,22 @@ int main(void)
   PWM_Period_AC = 64000000/(PWM_Freq_AC)-1;
   PWM_PulseWidth_AC = (int)((PWM_Period_AC*PWM_DutyC_AC)/100);
 
-  __HAL_TIM_SET_AUTORELOAD(&htim16, PWM_Period_AC);
-  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
-  HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+  __HAL_TIM_SET_AUTORELOAD(&htim1, PWM_Period_AC);
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_AC);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
-  HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1);			//TIM16 CH1N
+//  HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1);			//TIM16 CH1N
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);			//TIM1 CH1N
 
   //DC-DC PWM
   PWM_Period_DC = 64000000/(2*PWM_Freq_DC)-1;
   PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
 
-  __HAL_TIM_SET_AUTORELOAD(&htim1, PWM_Period_DC);
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  __HAL_TIM_SET_AUTORELOAD(&htim16, PWM_Period_DC);
+  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_DC);
+  HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+
+  HAL_TIMEx_PWMN_Start(&htim16, TIM_CHANNEL_1);			//TIM1 CH1N
 
   //ADC Init
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
@@ -201,12 +204,12 @@ int main(void)
 
 	  // Creating PWM for DC-AC
 	  PWM_PulseWidth_AC = (int)((PWM_Period_AC*PWM_DutyC_AC)/100);
-	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_AC);
+	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_AC);
 
 	  // Creating PWM for DC-DC
 //	  PWM_DutyC_DC = MPPT(&I_in, &V_in, &P_in, PWM_DutyC_DC);	// MPPT
 	  PWM_PulseWidth_DC = (int)((PWM_Period_DC*PWM_DutyC_DC)/100);
-	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, PWM_PulseWidth_DC);
+	  __HAL_TIM_SET_COMPARE(&htim16, TIM_CHANNEL_1, PWM_PulseWidth_DC);
 
 	  printf("Test\r\n");
 	  printf("Duty Cycle DC: %.2f\r\n", PWM_DutyC_DC);

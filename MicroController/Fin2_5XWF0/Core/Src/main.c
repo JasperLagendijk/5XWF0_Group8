@@ -71,7 +71,11 @@ int32_t PWM_Period_DC;
 int32_t PWM_PulseWidth_DC;
 
 // PWM AC
-uint32_t PWM_Freq_AC = 31800;
+uint32_t PWM_Freq_AC = 34000*2;		//Weird why *2 but the output AC is half freq
+//34000*2 almost has AC V and I in phase at 10cm
+//33900*2 gives 51W OUTPUT,	5.78A,	30V,	171W INPUT
+//32300*2 gives 27W OUTPUT, 2.7A,	 30V, 81W INPUT
+//32600*2 gives 40W OUTPUT, 4A/4.5A	, 30V,	120W-135W INPUT
 float PWM_DutyC_AC = 50;
 int32_t PWM_Period_AC;
 int32_t PWM_PulseWidth_AC;
@@ -216,7 +220,7 @@ int main(void)
 	  printf("Duty Cycle AC: %.2f\r\n", PWM_DutyC_AC);
 	  printf("ADC1/1: %.2f V\r\n", meas_volt_1);
 	  printf("ADC1/2: %.2f V\r\n", meas_volt_2);
-	  printf("ADC1/4: %.2f V\r\n", meas_volt_3);
+	  printf("DCDC Generator input: %.2f V\r\n", meas_volt_3);		//ADC1/4 DCDC GEN INPUT
 
 	  HAL_Delay(100);
 
